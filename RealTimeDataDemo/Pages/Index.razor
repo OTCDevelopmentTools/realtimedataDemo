@@ -1,0 +1,95 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client;
+@using RealTimeDataDemo.Models;
+
+<PageTitle>Index</PageTitle>
+
+<h1>Hello, world!</h1>
+
+Welcome to Real Time Data Demo App.
+
+<div>
+    App Status : @IsConnected
+    <br />
+    <br />
+    Updated On : @updatedOn
+</div>
+
+<h3>Incoming Messages</h3>
+
+@foreach (var msg in messageList)
+{
+    <span>@msg</span>
+}
+
+<br />
+<br />
+<h3>Incoming Employees</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Id
+            </th>
+            <th>
+                Name
+            </th>
+            <th>
+                Address
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var emp in empList)
+        {
+            <tr>
+                <td>
+                    @emp.Id
+                </td>
+                <td>
+                    @emp.Name
+                </td>
+                <td>
+                    @emp.Address
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+
+    private HubConnection? hubConnection;
+    public List<Employee>? empList;
+    public List<string> messageList = new List<string>();
+    public string? updatedOn;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        empList = new List<Employee>();
+        hubConnection = new HubConnectionBuilder()
+                        .WithUrl("http://localhost:5150/notificationhub")
+                        .Build();
+
+        hubConnection.On<Employee>("ReceiveEmployee", (incomingemployee) =>
+        {
+            empList.Add(incomingemployee);
+            updatedOn = DateTime.Now.ToLongDateString();
+            InvokeAsync(() => StateHasChanged());
+        });
+
+        hubConnection.On<string>("ReceiveMessage", (incomingmessage) =>
+        {
+            messageList.Add(incomingmessage);
+            updatedOn = DateTime.Now.ToLongDateString();
+            InvokeAsync(() => StateHasChanged());
+        });
+
+        await hubConnection.StartAsync();
+    }
+
+    public bool IsConnected =>
+    hubConnection?.State == HubConnectionState.Connected;
+}
+
