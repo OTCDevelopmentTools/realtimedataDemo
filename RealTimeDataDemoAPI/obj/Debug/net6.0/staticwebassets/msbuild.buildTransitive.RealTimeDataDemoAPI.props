@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\buildMultiTargeting\RealTimeDataDemoAPI.props" />
+</Project>
